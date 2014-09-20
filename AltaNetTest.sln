@@ -1,0 +1,34 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2013
+VisualStudioVersion = 12.0.30723.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AltaNetTestServer", "AltaNetTestServer\AltaNetTestServer.csproj", "{2A29EBF9-F2EB-472C-86A0-7EDCFCAAFC90}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AltaNetTestClient", "AltaNetTestClient\AltaNetTestClient.csproj", "{0C2FCE20-F66D-4378-96FB-5543330FCC42}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AltaNetTest", "AltaNetTest\AltaNetTest.csproj", "{081064F4-6B49-4912-9503-246F10B2ED4E}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{2A29EBF9-F2EB-472C-86A0-7EDCFCAAFC90}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2A29EBF9-F2EB-472C-86A0-7EDCFCAAFC90}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2A29EBF9-F2EB-472C-86A0-7EDCFCAAFC90}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2A29EBF9-F2EB-472C-86A0-7EDCFCAAFC90}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0C2FCE20-F66D-4378-96FB-5543330FCC42}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0C2FCE20-F66D-4378-96FB-5543330FCC42}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0C2FCE20-F66D-4378-96FB-5543330FCC42}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0C2FCE20-F66D-4378-96FB-5543330FCC42}.Release|Any CPU.Build.0 = Release|Any CPU
+		{081064F4-6B49-4912-9503-246F10B2ED4E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{081064F4-6B49-4912-9503-246F10B2ED4E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{081064F4-6B49-4912-9503-246F10B2ED4E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{081064F4-6B49-4912-9503-246F10B2ED4E}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
