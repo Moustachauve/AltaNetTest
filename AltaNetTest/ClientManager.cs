@@ -1,9 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Net;
+using System.Security.Cryptography;
+using System.Text;
 using AltarNet;
 
 namespace AltaNetTest
@@ -13,7 +11,8 @@ namespace AltaNetTest
 		#region Event definitions
 
 		public event EventHandler<TcpEventArgs> OnDisconnected;
-		public event EventHandler<TcpReceivedEventArgs> OnMessageReceived;
+		public event EventHandler<NotificationReceivedArgs> OnMessageReceived;
+		public event EventHandler<LoginFeedbackArgs> OnLogingFeedback;
 
 		#endregion
 
@@ -22,6 +21,8 @@ namespace AltaNetTest
 		private TcpClientHandler m_client;
 		private IPAddress m_ip;
 		private int m_port;
+
+		private bool m_isLoggedIn;
 
 		private Exception m_lastConnectionError;
 
@@ -44,6 +45,11 @@ namespace AltaNetTest
 		public bool IsConnected
 		{
 			get { return m_client != null; }
+		}
+
+		public bool IsLoggedIn
+		{
+			get { return m_isLoggedIn; }
 		}
 
 		public Exception LastConnectionError
@@ -72,7 +78,7 @@ namespace AltaNetTest
 				Disconnect();
 			}
 			m_client = new TcpClientHandler(m_ip, m_port);
-			if(m_client.Connect())
+			if (m_client.Connect())
 			{
 				m_client.Disconnected += m_client_Disconnected;
 				m_client.ReceivedFull += m_client_ReceivedFull;
@@ -90,14 +96,12 @@ namespace AltaNetTest
 				return;
 			m_client.Disconnect();
 			m_client = null;
+			m_isLoggedIn = false;
 		}
 
 		#endregion
 
-		public void SendMessage()
-		{
-			m_client.Send(Encoding.UTF8.GetBytes("Coucou!"));
-		}
+		#region Events
 
 		void m_client_Disconnected(object sender, TcpEventArgs e)
 		{
@@ -110,10 +114,81 @@ namespace AltaNetTest
 
 		void m_client_ReceivedFull(object sender, TcpReceivedEventArgs e)
 		{
+			var commandReceived = (CommandType)e.Data[0];
+
+			switch (commandReceived)
+			{
+				case CommandType.Notification:
+					NotificationReceived(e.Data);
+					break;
+				case CommandType.Broadcast:
+					break;
+				case CommandType.Login:
+					LoginFeedbackHandler(e);
+					break;
+				case CommandType.Error:
+					break;
+				default:
+					break;
+			}
+
+		}
+
+		#region Command Handler
+
+		#region Notification
+
+		private void NotificationReceived(byte[] data)
+		{
 			if (OnMessageReceived != null)
 			{
-				OnMessageReceived(this, e);
+				string message = Encoding.UTF8.GetString(data, 1, data.Length - 1);
+				OnMessageReceived(this, new NotificationReceivedArgs(message, "[SERVER] "));
 			}
+		}
+
+		#endregion
+
+		#region Login Feedback
+
+		private void LoginFeedbackHandler(TcpReceivedEventArgs e)
+		{
+			m_isLoggedIn = e.Data[1] == 1;
+
+			if(OnLogingFeedback != null)
+			{
+				OnLogingFeedback(this, new LoginFeedbackArgs(m_isLoggedIn));
+			}
+		}
+
+		#endregion
+
+		#endregion
+
+		#endregion
+
+		[Obsolete("This method is only there for testing purpose to test communication with server. Do not use.")]
+		public void SendMessage()
+		{
+			byte[] data = Command.PrefixCommand(CommandType.Notification, "Hello World!");
+			m_client.Send(data);
+		}
+
+		public void SendLogin(string pUsername, string pPassword)
+		{
+			byte[] username = Encoding.UTF8.GetBytes(pUsername);
+			byte[] Password = Encoding.UTF8.GetBytes(pPassword);
+
+			byte[] command = new byte[username.Length + Password.Length + 3];
+			command[0] = (byte)CommandType.Login;
+
+			command[1] = (byte)username.Length;
+			username.CopyTo(command, 2);
+
+			command[username.Length + 2] = (byte)Password.Length;
+			Password.CopyTo(command, username.Length + 3);
+
+			m_client.Send(command);
 		}
 
 	}

@@ -9,6 +9,8 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using AltarNet;
 using System.Net;
+using AltaNetTest;
+using AltaNetTest.User;
 
 namespace AltaNetTestServer
 {
@@ -97,6 +99,7 @@ namespace AltaNetTestServer
 		private void OnClientConnect(TcpEventArgs arg)
 		{
 			WriteInConsole("Client connected");
+            serverHandler.SendTo(arg.Client, "Welcome to this server.");
 		}
 
 		#endregion
@@ -121,7 +124,7 @@ namespace AltaNetTestServer
 			WriteInConsole("Client disconnected");
 		}
 
-		void serverHandler_OnMessageReceived(object sender, TcpReceivedEventArgs e)
+		void serverHandler_OnMessageReceived(object sender, NotificationReceivedArgs e)
 		{
 			if (InvokeRequired)
 			{
@@ -136,14 +139,14 @@ namespace AltaNetTestServer
 			}
 		}
 
-		private void OnMessageReceived(TcpReceivedEventArgs e)
+		private void OnMessageReceived(NotificationReceivedArgs e)
 		{
-			WriteInConsole("New message: " + Encoding.UTF8.GetString(e.Data));
+			WriteInConsole("[" + e.Type + "]: " + e.Message);
 		}
 
 		private void btnSendAll_Click(object sender, EventArgs e)
 		{
-			serverHandler.SendToAll("BROADCAST: Everyone should receive this message");
+			serverHandler.SendToAll("Everyone should receive this message.");
 		}
 
 		private void btnSendFirst_Click(object sender, EventArgs e)
@@ -151,8 +154,11 @@ namespace AltaNetTestServer
 			if (serverHandler.ConnectedClients == null || serverHandler.ConnectedClients.Count == 0)
 				return;
 
-			TcpClientInfo firstClient = serverHandler.ConnectedClients[0];
-			serverHandler.SendTo(firstClient, "Testing testing 1-2");
+			TcpClientInfo firstClient = serverHandler.ConnectedClients.ElementAt(0);
+
+			var user = (UserInfo) firstClient.Tag;
+
+			serverHandler.SendTo(firstClient, "Bonjour " + user.Name + "! Mouhahaha");
 		}
 	}
 }

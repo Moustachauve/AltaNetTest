@@ -36,6 +36,7 @@
 			this.txtPort = new System.Windows.Forms.TextBox();
 			this.Ip = new System.Windows.Forms.Label();
 			this.txtIp = new System.Windows.Forms.TextBox();
+			this.btnLogin = new System.Windows.Forms.Button();
 			this.SuspendLayout();
 			// 
 			// btnSend
@@ -56,8 +57,9 @@
 			this.btnStop.Name = "btnStop";
 			this.btnStop.Size = new System.Drawing.Size(82, 23);
 			this.btnStop.TabIndex = 15;
-			this.btnStop.Text = "Stop";
+			this.btnStop.Text = "Disconnect";
 			this.btnStop.UseVisualStyleBackColor = true;
+			this.btnStop.Click += new System.EventHandler(this.btnStop_Click);
 			// 
 			// btnStart
 			// 
@@ -65,7 +67,7 @@
 			this.btnStart.Name = "btnStart";
 			this.btnStart.Size = new System.Drawing.Size(82, 23);
 			this.btnStart.TabIndex = 14;
-			this.btnStart.Text = "Start";
+			this.btnStart.Text = "Connect";
 			this.btnStart.UseVisualStyleBackColor = true;
 			this.btnStart.Click += new System.EventHandler(this.btnStart_Click);
 			// 
@@ -112,11 +114,23 @@
 			this.txtIp.TabIndex = 9;
 			this.txtIp.Text = "127.0.0.1";
 			// 
+			// btnLogin
+			// 
+			this.btnLogin.Enabled = false;
+			this.btnLogin.Location = new System.Drawing.Point(14, 122);
+			this.btnLogin.Name = "btnLogin";
+			this.btnLogin.Size = new System.Drawing.Size(82, 38);
+			this.btnLogin.TabIndex = 17;
+			this.btnLogin.Text = "Login";
+			this.btnLogin.UseVisualStyleBackColor = true;
+			this.btnLogin.Click += new System.EventHandler(this.btnLogin_Click);
+			// 
 			// Client
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(865, 261);
+			this.Controls.Add(this.btnLogin);
 			this.Controls.Add(this.btnSend);
 			this.Controls.Add(this.btnStop);
 			this.Controls.Add(this.btnStart);
@@ -142,6 +156,7 @@
 		private System.Windows.Forms.TextBox txtPort;
 		private System.Windows.Forms.Label Ip;
 		private System.Windows.Forms.TextBox txtIp;
+		private System.Windows.Forms.Button btnLogin;
 	}
 }
 

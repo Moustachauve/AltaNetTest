@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Net;
-using System.Net.Sockets;
+using System.Security.Cryptography;
+using System.Text;
+using System.Linq;
 using AltarNet;
+using AltaNetTest.User;
 
 namespace AltaNetTest
 {
@@ -15,7 +15,7 @@ namespace AltaNetTest
 
 		public event EventHandler<TcpEventArgs> OnClientConnected;
 		public event EventHandler<TcpEventArgs> OnClientDisonnected;
-		public event EventHandler<TcpReceivedEventArgs> OnMessageReceived;
+		public event EventHandler<NotificationReceivedArgs> OnMessageReceived;
 
 		#endregion
 
@@ -25,7 +25,9 @@ namespace AltaNetTest
 		private IPAddress m_ip;
 		private int m_port;
 
-		private List<TcpClientInfo> m_clientList;
+        private ulong m_currUserIndex;
+		
+		private Dictionary<string, byte[]> m_adminList;
 
 		#endregion
 
@@ -48,9 +50,9 @@ namespace AltaNetTest
 			get { return m_server != null; }
 		}
 
-		public List<TcpClientInfo> ConnectedClients
+		public ICollection<TcpClientInfo> ConnectedClients
 		{
-			get { return m_clientList; }
+			get { return m_server.Clients.Values; }
 		}
 
 		#endregion
@@ -61,6 +63,8 @@ namespace AltaNetTest
 		{
 			m_ip = pIp;
 			m_port = pPort;
+			SHA256 sha256 = SHA256.Create();
+			m_adminList = new Dictionary<string, byte[]> { { "test", sha256.ComputeHash(Encoding.UTF8.GetBytes("test")) } };
 		}
 
 		~ServerManager()
@@ -76,7 +80,10 @@ namespace AltaNetTest
 		{
 			if (IsRunning)
 				return;
+
+            m_currUserIndex = 0;
 			m_server = new TcpServerHandler(m_ip, m_port);
+			//m_server.SSLServerCertificate = SslHelper.GetOrCreateSelfSignedCertificate("NameHere");
 			m_server.Connected += m_server_Connected;
 			m_server.Disconnected += m_server_Disconnected;
 			m_server.ReceivedFull += m_server_ReceivedFull;
@@ -87,8 +94,15 @@ namespace AltaNetTest
 		{
 			if (!IsRunning)
 				return;
+			this.SendToAll("Server is shutting down...");
+
+			m_server.Connected -= m_server_Connected;
+			m_server.Disconnected -= m_server_Disconnected;
+			m_server.ReceivedFull -= m_server_ReceivedFull;
+
 			m_server.DisconnectAll();
 			m_server.Stop();
+			m_server = null;
 		}
 
 		#endregion
@@ -99,6 +113,9 @@ namespace AltaNetTest
 
 		void m_server_Connected(object sender, TcpEventArgs e)
 		{
+			UserInfo client = new UserInfo(m_currUserIndex++, "Guest");
+			e.Client.Tag = client;
+
 			if (OnClientConnected != null)
 			{
 				OnClientConnected(this, e);
@@ -119,13 +136,62 @@ namespace AltaNetTest
 
 		#endregion
 
-		#region OnMessageReceive
+		#region OnCommandReceived
 
 		void m_server_ReceivedFull(object sender, TcpReceivedEventArgs e)
 		{
+			var commandReceived = (CommandType)e.Data[0];
+			switch (commandReceived)
+            {
+                case CommandType.Notification:
+					NotificationReceived(e.Data);
+                    break;
+                case CommandType.Login:
+					LoginRequest(e);
+                    break;
+                case CommandType.Error:
+                    break;
+            }
+		}
+
+		#endregion
+
+		#region Command Handler
+
+		#region Login Request
+
+		private void LoginRequest(TcpReceivedEventArgs e)
+		{
+			var user = (UserInfo)e.Client.Tag;
+
+			int usernameLength = e.Data[1];
+			string username = Encoding.UTF8.GetString(e.Data, 2, usernameLength);
+
+			int passwordLenght = e.Data[usernameLength + 2];
+			string password = Encoding.UTF8.GetString(e.Data, usernameLength + 3, passwordLenght);
+
+			bool success = TryLogIn(username, password);
+
+			if (success)
+			{
+				user.Name = username;
+				user.IsLoggedIn = true;
+			}
+			byte[] command = new byte[2];
+			command[0] = (byte)CommandType.Login;
+			command[1] = (byte)(success ? 1 : 0);
+			m_server.Send(e.Client, command);
+		}
+
+		#endregion
+
+		[Obsolete("This method is only used for testing purpose")]
+		private void NotificationReceived(byte[] data)
+		{
 			if (OnMessageReceived != null)
 			{
-				OnMessageReceived(this, e);
+				string message = Encoding.UTF8.GetString(data, 1, data.Length - 1);
+				OnMessageReceived(this, new NotificationReceivedArgs(message, "Client"));
 			}
 		}
 
@@ -135,14 +201,26 @@ namespace AltaNetTest
 
 		public void SendToAll(string pMessage)
 		{
-			byte[] data = Encoding.UTF8.GetBytes(pMessage);
+            byte[] data = Command.PrefixCommand(CommandType.Notification, pMessage);
 			m_server.SendAll(data);
 		}
 
 		public void SendTo(TcpClientInfo pClient, string pMessage)
 		{
-			byte[] data = Encoding.UTF8.GetBytes(pMessage);
-			m_server.Send(pClient, data);
+            byte[] data = Command.PrefixCommand(CommandType.Notification, pMessage);
+            m_server.Send(pClient, data);
+		}
+
+		private bool TryLogIn(string pUsername, string pPassword)
+		{
+			if (!m_adminList.ContainsKey(pUsername))
+				return false;
+
+			byte[] passwordBytes = Encoding.UTF8.GetBytes(pPassword);
+			SHA256Managed hashstring = new SHA256Managed();
+			byte[] hash = hashstring.ComputeHash(passwordBytes);
+
+			return m_adminList[pUsername].SequenceEqual(hash);
 		}
 
 	}
